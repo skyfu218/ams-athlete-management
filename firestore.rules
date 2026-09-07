@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function membership(orgId) { return get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)); }
+    function isMember(orgId) { return signedIn() && membership(orgId).data.active == true; }
+    function isCoach(orgId) { return isMember(orgId) && membership(orgId).data.role in ['owner', 'admin', 'coach']; }
+    function isMedical(orgId) { return isMember(orgId) && membership(orgId).data.role in ['owner', 'admin', 'medical']; }
+    match /organizations/{orgId} {
+      allow read: if isMember(orgId);
+      allow write: if isMember(orgId) && membership(orgId).data.role in ['owner', 'admin'];
+      match /members/{uid} { allow read: if isMember(orgId); allow write: if isMember(orgId) && membership(orgId).data.role in ['owner', 'admin']; }
+      match /athletes/{athleteId} { allow read: if isMember(orgId); allow create, update: if isCoach(orgId); allow delete: if isMember(orgId) && membership(orgId).data.role in ['owner', 'admin']; }
+      match /athletes/{athleteId}/medical/{recordId} { allow read, write: if isMedical(orgId); }
+      match /{collectionName}/{docId} {
+        allow read: if collectionName in ['teams','trainingModules','trainingSessions','cycles','competitions'] && isMember(orgId);
+        allow create, update: if collectionName in ['teams','trainingModules','trainingSessions','cycles','competitions'] && isCoach(orgId);
+        allow delete: if collectionName in ['teams','trainingModules','trainingSessions','cycles','competitions'] && isMember(orgId) && membership(orgId).data.role in ['owner', 'admin'];
+      }
+    }
+  }
+}
