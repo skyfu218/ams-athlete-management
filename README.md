@@ -14,6 +14,8 @@ pnpm build
 
 ## Firebase 接軌
 
+已連接 Firebase 專案 `ams-athletic-intelligence`，預期 Hosting 網址為 `https://ams-athletic-intelligence.web.app`。
+
 1. 在 Firebase Console 建立或指定一個專案。
 2. 於 Authentication 啟用組織允許的登入方式（建議 Google Workspace）。
 3. 建立 Cloud Firestore，不要使用長期開放的測試規則。
